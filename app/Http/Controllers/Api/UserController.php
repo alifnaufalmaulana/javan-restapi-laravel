@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -46,19 +47,32 @@ class UserController extends Controller
     // POST /api/users
     public function store(Request $request)
     {
-        // Validasi input
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|min:3',
             'email' => 'required|email'
+        ], [
+            'name.required' => 'Nama wajib diisi.',
+            'name.min' => 'Nama minimal 3 karakter.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Email harus berupa alamat email yang valid.'
         ]);
+
+        if ($validator->fails()) {
+            // Jika validasi gagal, kembalikan JSON error
+            return response()->json([
+                'success' => false,
+                'message' => 'Input tidak valid',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         // Buat ID baru
         $newId = count($this->users) + 1;
 
         $newUser = [
             'id' => $newId,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+            'name' => $request->name,
+            'email' => $request->email,
         ];
 
         // Simulasikan penambahan ke array (tidak persist)
